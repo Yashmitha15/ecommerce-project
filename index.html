@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MegaStore - Amazon Flipkart Style</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f1f3f6; }
+        
+        /* Navigation Top Bar */
+        .navbar { background: #2874f0; padding: 12px 10%; display: flex; align-items: center; justify-content: space-between; color: white; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 22px; font-weight: bold; font-style: italic; letter-spacing: 0.5px; cursor: pointer; }
+        .logo span { color: #ffe500; }
+        .search-container { display: flex; flex: 1; max-width: 500px; margin: 0 20px; }
+        .search-container input { width: 100%; padding: 10px 15px; border: none; border-radius: 2px 0 0 2px; outline: none; font-size: 14px; }
+        .search-container button { background: #ffe500; border: none; padding: 0 20px; border-radius: 0 2px 2px 0; color: #2874f0; cursor: pointer; font-size: 16px; }
+        
+        .nav-actions { display: flex; align-items: center; gap: 25px; }
+        .cart-btn { position: relative; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .cart-count { position: absolute; top: -10px; left: 12px; background: #ff6161; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; font-weight: bold; }
+        
+        /* Filter Control Layout Bar */
+        .filter-bar { background: white; padding: 15px 10%; display: flex; gap: 20px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        .filter-bar select { padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; outline: none; background: #f9f9f9; cursor: pointer; }
+
+        /* Core Store Layout container */
+        .main-container { padding: 30px 10%; display: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 25px; }
+        
+        /* Flipkart Style Product Cards */
+        .card { background: white; border-radius: 4px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border: 1px solid #f0f0f0; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .img-container { height: 180px; width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .card img { max-height: 100%; max-width: 100%; object-fit: contain; }
+        .product-name { font-size: 15px; font-weight: 500; color: #212121; margin-bottom: 5px; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .product-tag { background: #f0f5ff; color: #2874f0; font-size: 11px; padding: 3px 8px; border-radius: 2px; align-self: flex-start; margin-bottom: 8px; font-weight: bold; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .price { font-size: 18px; font-weight: bold; color: #111; }
+        .add-btn { background: #ff9f00; color: white; border: none; padding: 8px 12px; font-weight: 500; border-radius: 2px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 13px; width: auto; }
+        .add-btn:hover { background: #f39200; }
+
+        /* Auth Screen Styling */
+        .auth-container { max-width: 380px; margin: 80px auto; background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; }
+        .auth-container h2 { margin-bottom: 20px; font-weight: 600; color: #222; }
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #666; }
+        .input-group input { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 4px; outline: none; }
+        .auth-btn { background: #fb641b; color: white; border: none; padding: 12px; width: 100%; font-size: 15px; font-weight: 600; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .auth-btn:hover { background: #f25710; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar" id="nav-bar" style="display: none;">
+        <div class="logo" onclick="window.location.reload()">Mega<span>Store</span></div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" oninput="filterItems()" placeholder="Search for products, brands and more">
+            <button><i class="fa fa-search"></i></button>
+        </div>
+        
+        <div class="nav-actions">
+            <span id="welcome-msg"><i class="fa fa-user"></i> Guest</span>
+            <div class="cart-btn" onclick="alert('Proceeding to Checkout with ' + cartCount + ' items!')">
+                <i class="fa fa-shopping-cart" style="font-size: 20px;"></i>
+                <span>Cart</span>
+                <div class="cart-count" id="cart-badge">0</div>
+            </div>
+            <span onclick="logout()" style="cursor:pointer; color:#ffe500;"><i class="fa fa-sign-out-alt"></i> Logout</span>
+        </div>
+    </div>
+
+    <div class="filter-bar" id="filter-bar" style="display: none;">
+        <strong><i class="fa fa-filter"></i> Filters:</strong>
+        <select id="category-filter" onchange="filterItems()">
+            <option value="ALL">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Home">Home</option>
+        </select>
+
+        <select id="price-sort" onchange="filterItems()">
+            <option value="NONE">Sort by Price</option>
+            <option value="LOW">Price: Low to High</option>
+            <option value="HIGH">Price: High to Low</option>
+        </select>
+    </div>
+
+    <div id="auth-view" class="auth-container">
+        <h2 id="auth-title">Sign In</h2>
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter Username">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter Password">
+        </div>
+        <button class="auth-btn" id="main-auth-btn" onclick="handleAuth()">Continue</button>
+        <p style="text-align: center; margin-top: 20px; font-size: 13px;">
+            <a href="#" id="toggle-auth-link" onclick="toggleAuthMode()" style="color: #2874f0; text-decoration: none;">New to MegaStore? Create an account</a>
+        </p>
+    </div>
+
+    <div class="main-container" id="store-view">
+        <div class="grid" id="products-grid">Fetching the best inventory items...</div>
+    </div>
+
+    <script>
+        let allProducts = [];
+        let cartCount = 0;
+        let isLoginMode = true;
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? "Sign In" : "Create Account";
+            document.getElementById('main-auth-btn').innerText = isLoginMode ? "Continue" : "Sign Up";
+            document.getElementById('toggle-auth-link').innerText = isLoginMode ? "New to MegaStore? Create an account" : "Already have an account? Sign in here";
+        }
+
+        async function handleAuth() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const endpoint = isLoginMode ? 'login' : 'register';
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/auth/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const text = await res.text();
+                if (res.ok) {
+                    if (isLoginMode) {
+                        document.getElementById('auth-view').style.display = 'none';
+                        document.getElementById('nav-bar').style.display = 'flex';
+                        document.getElementById('filter-bar').style.display = 'flex';
+                        document.getElementById('store-view').style.display = 'block';
+                        document.getElementById('welcome-msg').innerHTML = `<i class="fa fa-user"></i> ${user}`;
+                        loadCatalog();
+                    } else {
+                        alert("Account created successfully!");
+                        toggleAuthMode();
+                    }
+                } else { alert(text); }
+            } catch (e) { alert("Backend connection offline."); }
+        }
+
+        function logout() { window.location.reload(); }
+
+        async function loadCatalog() {
+            try {
+                const res = await fetch('http://localhost:8080/api/products');
+                allProducts = await res.json();
+                renderItems(allProducts);
+            } catch (e) {
+                document.getElementById('products-grid').innerText = "Failed loading items from Java database.";
+            }
+        }
+
+        function renderItems(items) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = items.length === 0 ? `<p style="padding:20px;">No matching products found.</p>` : '';
+            
+            items.forEach(p => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div>
+                            <div class="img-container">
+                                <img src="${p.imageUrl}" alt="${p.name}">
+                            </div>
+                            <span class="product-tag">${p.category}</span>
+                            <div class="product-name">${p.name}</div>
+                            <div style="font-size:12px; color:#878787;">Stock remaining: ${p.stock}</div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price">$${p.price.toFixed(2)}</div>
+                            <button class="add-btn" onclick="addToCart()"><i class="fa fa-shopping-cart"></i> Add</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        /* LIVE SEARCH & INTERACTIVE FILTER ENGINE */
+        function filterItems() {
+            let filtered = [...allProducts];
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const catVal = document.getElementById('category-filter').value;
+            const sortVal = document.getElementById('price-sort').value;
+
+            // 1. Text Search Filter
+            if (searchVal) {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(searchVal));
+            }
+
+            // 2. Dropdown Category Filter
+            if (catVal !== "ALL") {
+                filtered = filtered.filter(p => p.category === catVal);
+            }
+
+            // 3. Price Ranking Filter
+            if (sortVal === "LOW") {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sortVal === "HIGH") {
+                filtered.sort((a, b) => b.price - a.price);
+            }
+
+            renderItems(filtered);
+        }
+
+        function addToCart() {
+            cartCount++;
+            document.getElementById('cart-badge').innerText = cartCount;
+        }
+    </script>
+</body>
+</html>
